@@ -1,6 +1,7 @@
 const { Restaurant, RestaurantOwner, RestaurantOwnerRelationship } = require('../models');
 const { Op } = require('sequelize');
 
+
 exports.createRestaurant = async (req, res) => {
     try {
         const { name, description, email, phone, address, offers_pickup, offers_delivery, ratings, image_url, owner_id } = req.body;
@@ -50,6 +51,7 @@ exports.createRestaurant = async (req, res) => {
     }
 };
 
+
 exports.viewAllRestaurants = async (req, res) => {
     try {
         const restaurants = await Restaurant.findAll({
@@ -60,6 +62,7 @@ exports.viewAllRestaurants = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 exports.viewSingleRestaurant = async (req, res) => {
     try {
@@ -75,6 +78,32 @@ exports.viewSingleRestaurant = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+exports.viewOwnerRestaurants = async (req, res) => {
+    try {
+        // Check if the owner exists in RestaurantOwner by owner_id
+        const owner = await RestaurantOwner.findByPk(req.params.id);
+        if (!owner) {
+            // If the owner does not exist, return a 404 error
+            return res.status(404).json({ error: `No owner found with ID: ${req.params.id}` });
+        }
+        // If the owner exists, fetch the restaurants linked to the owner_id
+        const restaurants = await Restaurant.findAll({
+            where: { owner_id: req.params.id },
+            attributes: ['id', 'name', 'description', 'email', 'phone', 'address', 'offers_pickup', 'offers_delivery', 'ratings', 'image_url', 'owner_id', 'created_at', 'updated_at']
+        });
+        if (restaurants.length > 0) {
+            // If restaurants are found, return them
+            return res.status(200).json(restaurants);
+        } else {
+            return res.status(404).json({ error: `No Restaurants found for Owner with ID: ${req.params.id}` });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 
 exports.updateRestaurant = async (req, res) => {
     try {
@@ -144,6 +173,7 @@ exports.updateRestaurant = async (req, res) => {
         console.error(error);
     }
 };
+
 
 exports.deleteRestaurant = async (req, res) => {
     try {

@@ -2,12 +2,69 @@ const bcrypt = require('bcrypt');
 const { RestaurantOwner } = require('../models');
 const { Op } = require('sequelize');
 
+
+// Restaurant Owner Login
+exports.restaurantOwnerLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check if restaurant owner exists
+        const owner = await RestaurantOwner.findOne({ where: { email } });
+        if (!owner) {
+            return res.status(400).json({ error: "Invalid email or password" });
+        }
+
+        // Compare passwords
+        const isMatch = await bcrypt.compare(password, owner.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Invalid email or password" });
+        }
+
+        // Store session (excluding password)
+        req.session.owner = {
+            id: owner.id,
+            first_name: owner.first_name,
+            last_name: owner.last_name,
+            email: owner.email,
+            phone: owner.phone,
+            address: owner.address
+        };
+
+        res.status(200).json({ message: "Login successful!", owner: req.session.owner });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Checking if Restaurant Owner is Logged In
+exports.checkOwnerAuth = (req, res) => {
+    console.log('Session in checkOwnerAuth:', req.session);
+    console.log('Session ID in checkOwnerAuth:', req.sessionID);
+    console.log('Owner in session:', req.session.owner);
+    
+    if (req.session && req.session.owner) {
+        res.json({ isAuthenticated: true, owner: req.session.owner });
+    } else {
+        res.json({ isAuthenticated: false });
+    }
+};
+
+
+// Restaurant Owner Logout
+exports.restaurantOwnerLogout = (req, res) => {
+    req.session.destroy(() => {
+        res.json({ message: "Logged out successfully!" });
+    });
+};
+
+
 exports.createRestaurantOwner = async (req, res) => {
     try {
         const { first_name, last_name, email, password, phone, date_of_birth, image_url, address } = req.body;
 
         // Basic validation
-        if (!first_name || !last_name || !email || !password || !phone || !date_of_birth) {
+        if (!first_name || !last_name || !email || !password || !phone || !date_of_birth || !address) {
             return res.status(400).json({ error: "Required fields are missing" });
         }
 
@@ -29,7 +86,7 @@ exports.createRestaurantOwner = async (req, res) => {
             phone,
             date_of_birth,
             image_url: image_url || null,  // Set image_url to null if not provided
-            address: address || null       // Add address field
+            address: address
         });
 
         res.status(201).json({ msg: "Restaurant Owner Created", owner });
@@ -37,6 +94,7 @@ exports.createRestaurantOwner = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 exports.viewAllRestaurantOwners = async (req, res) => {
     try {
@@ -48,6 +106,7 @@ exports.viewAllRestaurantOwners = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 exports.viewSingleRestaurantOwner = async (req, res) => {
     try {
@@ -64,6 +123,7 @@ exports.viewSingleRestaurantOwner = async (req, res) => {
     }
 };
 
+
 exports.updateRestaurantOwner = async (req, res) => {
     try {
         const { first_name, last_name, email, password, phone, date_of_birth, image_url, address } = req.body;
@@ -71,6 +131,11 @@ exports.updateRestaurantOwner = async (req, res) => {
         const owner = await RestaurantOwner.findByPk(req.params.id);
         if (!owner) {
             return res.status(404).json({ error: `No Restaurant Owner found with ID: ${req.params.id}` });
+        }
+
+        // Basic validation
+        if (!first_name || !last_name || !email || !password || !phone || !date_of_birth || !address) {
+            return res.status(400).json({ error: "Required fields are missing" });
         }
 
         // Check for email uniqueness
@@ -97,7 +162,7 @@ exports.updateRestaurantOwner = async (req, res) => {
                 phone, 
                 date_of_birth, 
                 image_url: image_url || null,  // Update image_url if provided
-                address: address || null        // Update address if provided
+                address: address
             },
             { where: { id: req.params.id } }
         );
@@ -111,6 +176,7 @@ exports.updateRestaurantOwner = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 exports.deleteRestaurantOwner = async (req, res) => {
     try {

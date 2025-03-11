@@ -1,6 +1,7 @@
 const { Order, OrderItem, Dish, Customer, Restaurant } = require('../models');
 const { Op } = require('sequelize');
 
+
 exports.createOrder = async (req, res) => {
     try {
         const { customer_id, restaurant_id, order_type, order_items } = req.body;
@@ -24,11 +25,11 @@ exports.createOrder = async (req, res) => {
 
         // Check if the restaurant offers the requested order_type
         if (order_type.toLowerCase() === 'delivery' && !restaurant.offers_delivery) {
-            return res.status(400).json({ error: `Restaurant ID: ${restaurant_id} doesn't offer Delivery` });
+            return res.status(400).json({ error: `${restaurant.name} doesn't offer Delivery` });
         }
 
         if (order_type.toLowerCase() === 'pickup' && !restaurant.offers_pickup) {
-            return res.status(400).json({ error: `Restaurant ID: ${restaurant_id} doesn't offer Pickup` });
+            return res.status(400).json({ error: `${restaurant.name} doesn't offer Pickup` });
         }
 
         // Check if each dish_id in order_items is valid
@@ -100,6 +101,7 @@ exports.createOrder = async (req, res) => {
     }
 };
 
+
 // Helper function to create order items
 async function createOrderItems(orderId, items, dishes) {
     for (const item of items) {
@@ -126,10 +128,13 @@ async function createOrderItems(orderId, items, dishes) {
     }
 }
 
-// Function to view all orders
-exports.viewAllOrders = async (req, res) => {
+
+// View all Customer Orders
+exports.viewAllOrdersCustomer = async (req, res) => {
     try {
+        const { customer_id } = req.params;
         const orders = await Order.findAll({
+            where: { customer_id },
             attributes: ['id', 'customer_id', 'restaurant_id', 'status', 'order_number', 'created_at', 'updated_at', 'total', 'order_type'],
             include: [
                 { model: Customer, attributes: ['id', 'first_name', 'last_name'] },
@@ -142,15 +147,50 @@ exports.viewAllOrders = async (req, res) => {
     }
 };
 
-// Function to view a single order by ID
+
+// View all Restaurant Orders
+exports.viewAllOrdersRestaurant = async (req, res) => {
+    try {
+        const { restaurant_id } = req.params;
+        const orders = await Order.findAll({
+            where: { restaurant_id },
+            attributes: ['id', 'customer_id', 'restaurant_id', 'status', 'order_number', 'created_at', 'updated_at', 'total', 'order_type'],
+            include: [
+                { model: Customer, attributes: ['id', 'first_name', 'last_name'] },
+                { model: Restaurant, attributes: ['id', 'name', 'address'] },
+            ],
+        });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Function to view a single detailed order by ID
 exports.viewSingleOrder = async (req, res) => {
     try {
         const order = await Order.findByPk(req.params.id, {
             attributes: ['id', 'customer_id', 'restaurant_id', 'status', 'order_number', 'created_at', 'updated_at', 'total', 'order_type'],
             include: [
-                { model: Customer, attributes: ['id', 'name'] },
-                { model: Restaurant, attributes: ['id', 'name'] },
-            ],
+                // Include Customer details
+                { model: Customer, attributes: ['first_name', 'last_name', 'address'] },
+
+                // Include Restaurant details
+                { model: Restaurant, attributes: ['name', 'description', 'email', 'image_url', 'phone', 'address', 'ratings'] },
+
+                // Include OrderItems and associated Dish details
+                { 
+                    model: OrderItem,
+                    attributes: ['id', 'quantity', 'size', 'price'],  
+                    include: [
+                        { 
+                            model: Dish, 
+                            attributes: ['id', 'name', 'description', 'price', 'size', 'image_url']
+                        }
+                    ]
+                }
+            ]
         });
 
         if (order) {
@@ -163,37 +203,19 @@ exports.viewSingleOrder = async (req, res) => {
     }
 };
 
-// Function to update an order
+
+// Function to update an order status
 exports.updateOrder = async (req, res) => {
     try {
         const url_id = req.params.id;
-        const { order_number, order_type, status } = req.body;
+        const { status } = req.body;
 
-        // Check if order exists by id and order_number
-        const order = await Order.findOne({ where: { id: url_id, order_number } });
+        // Check if order exists by id
+        const order = await Order.findOne({ where: { id: url_id } });
         if (!order) {
             return res.status(404).json({
-                error: `No Entry found for ID: ${url_id} and Order Number: ${order_number}`,
+                error: `No Entry found for Order ID: ${url_id}`,
             });
-        }
-
-        // Validate order_type if provided
-        if (order_type) {
-            const validOrderTypes = ['delivery', 'pickup'];
-            if (!validOrderTypes.includes(order_type.toLowerCase())) {
-                return res.status(400).json({
-                    error: 'Order type must be either delivery or pickup',
-                });
-            }
-
-            // Check if the restaurant offers the requested order_type
-            const restaurant = await Restaurant.findByPk(order.restaurant_id);
-            if (order_type.toLowerCase() === 'delivery' && !restaurant.offers_delivery) {
-                return res.status(400).json({ error: `Restaurant ID: ${order.restaurant_id} doesn't offer Delivery` });
-            }
-            if (order_type.toLowerCase() === 'pickup' && !restaurant.offers_pickup) {
-                return res.status(400).json({ error: `Restaurant ID: ${order.restaurant_id} doesn't offer Pickup` });
-            }
         }
 
         // Validate status if provided
@@ -209,7 +231,6 @@ exports.updateOrder = async (req, res) => {
 
         // Build update object dynamically
         const updateFields = {};
-        if (order_type) updateFields.order_type = order_type;
         if (status) updateFields.status = lower_status;
 
         // Only update if there are changes

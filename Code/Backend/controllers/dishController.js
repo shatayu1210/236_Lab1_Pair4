@@ -1,6 +1,7 @@
 const { Dish, Restaurant } = require('../models');
 const { Op } = require('sequelize');
 
+
 exports.createDish = async (req, res) => {
     try {
         const { name, description, price, restaurant_id, size, image_url } = req.body;
@@ -39,6 +40,7 @@ exports.createDish = async (req, res) => {
     }
 };
 
+
 exports.viewAllDishes = async (req, res) => {
     try {
         const dishes = await Dish.findAll({
@@ -49,6 +51,25 @@ exports.viewAllDishes = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+exports.viewDishesByRestaurant = async (req, res) => {
+    try {
+        const dishes = await Dish.findAll({
+            where: { restaurant_id: req.params.id },
+            attributes: ['id', 'name', 'description', 'price', 'restaurant_id', 'size', 'image_url', 'created_at', 'updated_at']
+        });
+        if (dishes.length > 0) {
+            res.status(200).json(dishes);
+        } else {
+            res.status(404).json({ error: `No dishes found for Restaurant ID: ${req.params.restaurant_id}` });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
 
 exports.viewSingleDish = async (req, res) => {
     try {
@@ -65,6 +86,7 @@ exports.viewSingleDish = async (req, res) => {
     }
 };
 
+
 exports.updateDish = async (req, res) => {
     try {
         const { name, description, price, restaurant_id, size, image_url } = req.body;
@@ -73,13 +95,11 @@ exports.updateDish = async (req, res) => {
         if (!dish) {
             return res.status(404).json({ error: `No Dish found with ID: ${req.params.id}` });
         }
-
         // Check if restaurant exists
         const restaurant = await Restaurant.findByPk(restaurant_id);
         if (restaurant_id && !restaurant) {
             return res.status(400).json({ error: `Restaurant ID: ${restaurant_id} not found` });
         }
-
         // Update Dish if valid Restaurant ID
         await Dish.update(
             { 
@@ -92,7 +112,6 @@ exports.updateDish = async (req, res) => {
             },
             { where: { id: req.params.id } }
         );
-
         const updatedDish = await Dish.findByPk(req.params.id, {
             attributes: ['id', 'name', 'description', 'price', 'restaurant_id', 'size', 'image_url', 'created_at', 'updated_at']
         });
@@ -102,6 +121,7 @@ exports.updateDish = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 exports.deleteDish = async (req, res) => {
     try {
