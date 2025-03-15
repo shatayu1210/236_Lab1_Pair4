@@ -10,16 +10,18 @@ import CustomerSignup from './components/Auth/CustomerSignup';
 import CustomerLogin from './components/Auth/CustomerLogin';
 import CustomerHome from './components/Customer/CustomerHome';
 import RestaurantDetail from './components/Customer/RestaurantDetail';
-import CustomerEditProfile from './components/Customer/Profile';
+import CustomerEditProfile from './components/Customer/CustomerProfile';
 import Cart from './components/Customer/Cart';
-import CustomerOrders from './components/Customer/Orders';
+import CustomerOrders from './components/Customer/CustomerOrders';
+import CustomerFavorites from './components/Customer/CustomerFavorites';
+
 
 // Owner
 import OwnerSignup from './components/Auth/RestaurantOwnerSignup';
 import OwnerLogin from './components/Auth/RestaurantOwnerLogin';
 import OwnerRestaurantList from './components/Owner/OwnerRestaurantList';
 import RestaurantOrders from './components/Owner/RestaurantOrders';
-import OwnerEditProfile from './components/Owner/Profile';
+import OwnerEditProfile from './components/Owner/OwnerProfile';
 
 import './App.css';
 
@@ -112,7 +114,7 @@ function App() {
         {/* Customer */}
         <Route path="/customer/signup" element={<CustomerSignup />} />
         <Route path="/customer/login" element={<CustomerLogin />} />
-        <Route path="/profile/edit/:id" element={<CustomerEditProfile />} />
+        <Route path="/customer/profile/:id" element={<CustomerEditProfile />} />
         <Route path="/customer/home" element={
           <CustomerProtectedRoute>
             <CustomerHome />
@@ -125,6 +127,7 @@ function App() {
         } />
         <Route path="/cart" element={<Cart />} />
         <Route path="/customer/orders" element={<CustomerOrders />} />
+        <Route path="/customer/favorites" element={<CustomerFavorites />} />
 
 
         {/* Owner */}
@@ -140,7 +143,7 @@ function App() {
             <RestaurantOrders />
           </OwnerProtectedRoute>
         } />
-        <Route path="/owner/profile" element={<OwnerEditProfile />} />
+        <Route path="/owner/profile/:id" element={<OwnerEditProfile />} />
 
 
       </Routes>

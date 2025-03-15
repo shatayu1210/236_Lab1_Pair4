@@ -5,6 +5,7 @@ import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { createRestaurantOwner } from "../../redux/slices/owner/ownerSlice"; //
 import NavbarDark from "../Common/NavbarDark";
+import { validateEmail, validatePhone } from "../../utils/validation";
 
 const OwnerSignup = () => {
     const [owner, setOwner] = useState({
@@ -18,6 +19,11 @@ const OwnerSignup = () => {
         image_url: null,
     });
 
+    const [validationErrors, setValidationErrors] = useState({
+        email: "",
+        phone: ""
+    });
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { loading, error } = useSelector((state) => state.restaurantOwner);
@@ -25,6 +31,14 @@ const OwnerSignup = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setOwner({ ...owner, [name]: value });
+        
+        // Clear validation errors when user types
+        if (name === 'email' || name === 'phone') {
+            setValidationErrors({
+                ...validationErrors,
+                [name]: ""
+            });
+        }
     };
 
     // Handle Pictures through our upload route using multer
@@ -48,9 +62,29 @@ const OwnerSignup = () => {
     // Sending json data to reducer
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate email and phone before submission
+        let isValid = true;
+        const newValidationErrors = { email: "", phone: "" };
+        
+        if (!validateEmail(owner.email)) {
+            newValidationErrors.email = "Please enter a valid email address";
+            isValid = false;
+        }
+        
+        if (!validatePhone(owner.phone)) {
+            newValidationErrors.phone = "Please enter a valid 10-digit phone number";
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            setValidationErrors(newValidationErrors);
+            return;
+        }
+        
         console.log("Submitting restaurant owner data:", owner);
         await dispatch(createRestaurantOwner(owner));
-        navigate("/restaurant/login", { state: { accountCreated: true } });
+        navigate("/owner/login", { state: { accountCreated: true } });
     };
 
     return (
@@ -79,13 +113,24 @@ const OwnerSignup = () => {
                             <label htmlFor="phone" className="form-label my-0">
                                 Phone <span className="text-danger">*</span>
                             </label>
-                            <input type="text" className="form-control" name="phone" value={owner.phone} onChange={handleChange} required />
+                            <input 
+                                type="tel" 
+                                className="form-control" 
+                                name="phone" 
+                                value={owner.phone} 
+                                onChange={handleChange} 
+                                pattern="[0-9]*" 
+                                inputMode="numeric"
+                                required 
+                            />
+                            {validationErrors.phone && <div className="text-danger">{validationErrors.phone}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="email" className="form-label my-0">
                                 Email <span className="text-danger">*</span>
                             </label>
                             <input type="email" className="form-control" name="email" value={owner.email} onChange={handleChange} required />
+                            {validationErrors.email && <div className="text-danger">{validationErrors.email}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="password" className="form-label my-0">

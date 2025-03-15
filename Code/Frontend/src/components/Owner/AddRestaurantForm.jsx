@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import NavbarDark from '../Common/NavbarDark';
+import { useNavigate } from "react-router-dom";
+import { validateEmail, validatePhone } from "../../utils/validation";
 
 const AddRestaurantForm = ({ onSuccess, onCancel }) => {
     const ownerId = useSelector((state) => {
         return state.auth?.restaurantOwner?.id;
     });
     const [loading, setLoading] = useState(false);
+    const [uploadLoading, setUploadLoading] = useState(false); // State for file upload loading
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -21,6 +24,21 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
         image_url: null,
         owner_id: null  // Initialize as null
     });
+
+    const [validationErrors, setValidationErrors] = useState({
+        email: "",
+        phone: ""
+    });
+
+    const navigate = useNavigate();
+
+    const isOwnerAuthenticated = useSelector((state) => state.auth.isOwnerAuthenticated);
+
+    useEffect(() => {
+        if (!isOwnerAuthenticated) {
+            navigate("/owner/login"); // Redirect to owner login page if not logged in
+        }
+    }, [isOwnerAuthenticated, navigate]);
 
     // Update formData when ownerId changes
     useEffect(() => {
@@ -43,9 +61,47 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
             [name]: type === 'checkbox' ? checked : value
         }));
         
+        // Clear validation errors when user types
+        if (name === 'email' || name === 'phone') {
+            setValidationErrors({
+                ...validationErrors,
+                [name]: ""
+            });
+        }
+        
         // Clear error when user changes the email field
         if (name === 'email' && error && error.includes('Email')) {
             setError(null);
+        }
+    };
+
+    // Handle File Upload
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploadLoading(true);
+        const formData = new FormData();
+        formData.append("image_url", file);
+
+        try {
+            const response = await axios.post("/api/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                withCredentials: true
+            });
+            
+            console.log("File upload response:", response.data);
+            
+            setFormData((prevState) => ({
+                ...prevState,
+                image_url: response.data.filePath, // Update image_url with the file path from the server
+            }));
+            
+        } catch (error) {
+            console.error("File upload failed", error);
+            alert("Failed to upload file. Please try again.");
+        } finally {
+            setUploadLoading(false);
         }
     };
 
@@ -53,6 +109,26 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Validate email and phone before submission
+        let isValid = true;
+        const newValidationErrors = { email: "", phone: "" };
+        
+        if (!validateEmail(formData.email)) {
+            newValidationErrors.email = "Please enter a valid email address";
+            isValid = false;
+        }
+        
+        if (!validatePhone(formData.phone)) {
+            newValidationErrors.phone = "Please enter a valid 10-digit phone number";
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            setValidationErrors(newValidationErrors);
+            setLoading(false);
+            return;
+        }
 
         console.log('Form submission - Current formData:', formData);
         console.log('Form submission - Current ownerId:', ownerId);
@@ -144,6 +220,7 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
                                     onChange={handleChange}
                                     required
                                 />
+                                {validationErrors.email && <div className="text-danger">{validationErrors.email}</div>}
                             </div>
 
                             <div className="mb-3">
@@ -156,8 +233,11 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
+                                    pattern="[0-9]*"
+                                    inputMode="numeric"
                                     required
                                 />
+                                {validationErrors.phone && <div className="text-danger">{validationErrors.phone}</div>}
                             </div>
 
                             <div className="mb-3">
@@ -237,16 +317,32 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
 
                             <div className="mb-3">
                                 <label htmlFor="image_url" className="form-label my-0">
-                                    Restaurant Image URL <span className="text-muted">(optional)</span>
+                                    Restaurant Image <span className="text-muted">(optional)</span>
                                 </label>
                                 <input
-                                    type="url"
+                                    type="file"
                                     className="form-control"
                                     name="image_url"
-                                    value={formData.image_url || ''}
-                                    onChange={handleChange}
-                                    placeholder="Enter image URL"
+                                    onChange={handleFileChange}
+                                    accept="image/*" // Allow only image files
+                                    disabled={uploadLoading}
                                 />
+                                {uploadLoading && (
+                                    <div className="mt-2">
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Uploading...
+                                    </div>
+                                )}
+                                {formData.image_url && (
+                                    <div className="mt-2">
+                                        <img
+                                            src={formData.image_url.startsWith('/') ? `http://127.0.0.1:3000${formData.image_url}` : formData.image_url}
+                                            alt="Restaurant Preview"
+                                            className="img-thumbnail"
+                                            style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -255,7 +351,7 @@ const AddRestaurantForm = ({ onSuccess, onCancel }) => {
                         <button 
                             type="submit" 
                             className="btn btn-dark rounded-2 text-white px-5" 
-                            disabled={loading}
+                            disabled={loading || uploadLoading}
                             style={{ minWidth: '200px' }}
                         >
                             {loading ? (

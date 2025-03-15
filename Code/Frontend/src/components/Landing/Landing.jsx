@@ -15,7 +15,7 @@ const LandingPage = () => {
             <h1 className="display-4 fw-bold text-light mb-5 custom-shadow">Order delivery near you</h1>
 
             {/* Search Box */}
-            <div className="d-flex align-items-stretch justify-content-start w-50">
+            {/* <div className="d-flex align-items-stretch justify-content-start w-50">
                 <div className="bg-white rounded-1 shadow-lg d-flex align-items-center w-75">
                     <FaMapMarkerAlt className="text-secondary ms-3" />
                     <input
@@ -26,7 +26,7 @@ const LandingPage = () => {
                     />
                 </div>
                 <button className="btn btn-dark ms-2 rounded-1 p-2 w-25">Search here</button>
-            </div>
+            </div> */}
       </div>
     </div>
   );

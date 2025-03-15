@@ -16,6 +16,7 @@ const api = axios.create({
   }
 });
 
+// Login Customer
 export const loginUser = createAsyncThunk(
   "customerAuth/loginUser",
   async (credentials, { rejectWithValue }) => {

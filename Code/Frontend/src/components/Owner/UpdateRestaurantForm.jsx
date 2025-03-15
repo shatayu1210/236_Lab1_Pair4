@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import NavbarDark from '../Common/NavbarDark';
+import { useNavigate } from "react-router-dom";
+import { validateEmail, validatePhone } from "../../utils/validation";
+
 
 const UpdateRestaurantForm = ({ restaurant, onSuccess, onCancel }) => {
     const ownerId = useSelector((state) => state.auth.restaurantOwner?.id);
     console.log('UpdateRestaurantForm - ownerId:', ownerId);
     console.log('UpdateRestaurantForm - restaurant:', restaurant);
     
+    const navigate = useNavigate();
+
+    const isOwnerAuthenticated = useSelector((state) => state.auth.isOwnerAuthenticated);    
+
+    useEffect(() => {
+        if (!isOwnerAuthenticated) {
+            navigate("/owner/login"); // Redirect to owner login page if not logged in
+        }
+    }, [isOwnerAuthenticated, navigate]);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [uploadStatus, setUploadStatus] = useState('');
@@ -23,12 +36,25 @@ const UpdateRestaurantForm = ({ restaurant, onSuccess, onCancel }) => {
         ratings: restaurant.ratings || 0.0  // Default ratings set as decimal value
     });
 
+    const [validationErrors, setValidationErrors] = useState({
+        email: "",
+        phone: ""
+    });
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+        
+        // Clear validation errors when user types
+        if (name === 'email' || name === 'phone') {
+            setValidationErrors({
+                ...validationErrors,
+                [name]: ""
+            });
+        }
     };
 
     // Handle image upload separately
@@ -63,6 +89,26 @@ const UpdateRestaurantForm = ({ restaurant, onSuccess, onCancel }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Validate email and phone before submission
+        let isValid = true;
+        const newValidationErrors = { email: "", phone: "" };
+        
+        if (!validateEmail(formData.email)) {
+            newValidationErrors.email = "Please enter a valid email address";
+            isValid = false;
+        }
+        
+        if (!validatePhone(formData.phone)) {
+            newValidationErrors.phone = "Please enter a valid 10-digit phone number";
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            setValidationErrors(newValidationErrors);
+            setLoading(false);
+            return;
+        }
 
         try {
             // Create a JSON object for all fields
@@ -162,6 +208,7 @@ const UpdateRestaurantForm = ({ restaurant, onSuccess, onCancel }) => {
                                                     onChange={handleChange}
                                                     required
                                                 />
+                                                {validationErrors.email && <div className="text-danger">{validationErrors.email}</div>}
                                             </div>
 
                                             <div className="col-12 col-md-6">
@@ -174,8 +221,11 @@ const UpdateRestaurantForm = ({ restaurant, onSuccess, onCancel }) => {
                                                     className="form-control"
                                                     value={formData.phone}
                                                     onChange={handleChange}
+                                                    pattern="[0-9]*"
+                                                    inputMode="numeric"
                                                     required
                                                 />
+                                                {validationErrors.phone && <div className="text-danger">{validationErrors.phone}</div>}
                                             </div>
 
                                             <div className="col-12">

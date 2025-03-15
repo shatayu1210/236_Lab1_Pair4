@@ -1,28 +1,37 @@
+// OwnerRestaurantList.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { fetchOwnerRestaurants } from '../../redux/slices/owner/ownerRestaurantSlice';
 import AddRestaurantForm from './AddRestaurantForm';
 import UpdateRestaurantForm from './UpdateRestaurantForm';
+import UpdateRestaurantDishForm from './UpdateRestaurantDishForm'; // Import the new component
 import NavbarDark from '../Common/NavbarDark';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { useNavigate } from "react-router-dom";
 
 const OwnerRestaurantList = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const { restaurants, loading, error } = useSelector((state) => state.ownerRestaurants);
     const ownerId = useSelector((state) => state.auth.restaurantOwner?.id);
-    
-    console.log('OwnerRestaurantList - ownerId:', ownerId);
-    console.log('OwnerRestaurantList - restaurants:', restaurants);
-    
+    const isOwnerAuthenticated = useSelector((state) => state.auth.isOwnerAuthenticated);
+
     const [showAddForm, setShowAddForm] = useState(false);
     const [showUpdateForm, setShowUpdateForm] = useState(false);
+    const [showDishUpdateForm, setShowDishUpdateForm] = useState(false); // State for dish update form
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
 
     useEffect(() => {
+        if (!isOwnerAuthenticated) {
+            navigate("/owner/login");
+        }
+    }, [isOwnerAuthenticated, navigate]);
+
+    useEffect(() => {
         if (ownerId) {
-            console.log('Fetching restaurants for owner ID:', ownerId);
             dispatch(fetchOwnerRestaurants(ownerId));
         }
     }, [dispatch, ownerId]);
@@ -30,7 +39,6 @@ const OwnerRestaurantList = () => {
     const handleAddSuccess = (newRestaurant) => {
         setShowAddForm(false);
         if (ownerId) {
-            console.log('After add success - Fetching restaurants for owner ID:', ownerId);
             dispatch(fetchOwnerRestaurants(ownerId));
         }
     };
@@ -39,14 +47,23 @@ const OwnerRestaurantList = () => {
         setShowUpdateForm(false);
         setSelectedRestaurant(null);
         if (ownerId) {
-            console.log('After update success - Fetching restaurants for owner ID:', ownerId);
             dispatch(fetchOwnerRestaurants(ownerId));
         }
+    };
+
+    const handleUpdateDishSuccess = () => {
+        setShowDishUpdateForm(false);
+        setSelectedRestaurant(null);
     };
 
     const handleUpdateClick = (restaurant) => {
         setSelectedRestaurant(restaurant);
         setShowUpdateForm(true);
+    };
+
+    const handleUpdateDishClick = (restaurant) => {
+        setSelectedRestaurant(restaurant);
+        setShowDishUpdateForm(true);
     };
 
     if (loading) {
@@ -82,6 +99,17 @@ const OwnerRestaurantList = () => {
             onSuccess={handleUpdateSuccess} 
             onCancel={() => {
                 setShowUpdateForm(false);
+                setSelectedRestaurant(null);
+            }} 
+        />;
+    }
+
+    if (showDishUpdateForm && selectedRestaurant) {
+        return <UpdateRestaurantDishForm 
+            restaurant={selectedRestaurant}
+            onSuccess={handleUpdateDishSuccess} 
+            onCancel={() => {
+                setShowDishUpdateForm(false);
                 setSelectedRestaurant(null);
             }} 
         />;
@@ -175,6 +203,12 @@ const OwnerRestaurantList = () => {
                                                     onClick={() => handleUpdateClick(restaurant)}
                                                 >
                                                     Update Info
+                                                </button>
+                                                <button 
+                                                    className="btn btn-outline-dark rounded-2"
+                                                    onClick={() => handleUpdateDishClick(restaurant)}
+                                                >
+                                                    Manage Dishes
                                                 </button>
                                             </div>
                                         </div>

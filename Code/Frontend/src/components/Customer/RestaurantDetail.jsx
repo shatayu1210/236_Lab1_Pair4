@@ -91,18 +91,18 @@ const RestaurantDetail = () => {
         return (
             <>
                 <NavbarDark />
+                <Link to="/customer/home" style={{ textDecoration: 'none' }}>
+                    <button
+                        className="btn text-dark border-0 d-flex align-items-center mt-3 ms-4 fw-bold"
+                        style={{ backgroundColor: 'transparent' }}
+                    >
+                        <span className="fs-5 me-1">←</span><u>Back to Home</u>
+                    </button>
+                </Link>
                 <div className="container mt-4">
                     <div className="text-warning">
                         <p>No restaurant dishes found</p>
                     </div>
-                    <Link to="/customer/home">
-                    <button
-                        className="btn text-dark border-0 d-flex align-items-center mt-3 ms-3 fw-bold"
-                        style={{ backgroundColor: 'transparent' }}
-                    >
-                        <span className="fs-5 me-1">←</span><u> Browse Other Restaurants</u>
-                    </button>
-                    </Link>
                 </div>
             </>
         );
@@ -123,15 +123,15 @@ const RestaurantDetail = () => {
     return (
         <>
             <NavbarDark />
-            <div className="container mt-4">
-            <Link to="/customer/home">
-            <button
-                className="btn text-dark border-0 d-flex align-items-center mt-3 ms-3 fw-bold"
-                style={{ backgroundColor: 'transparent' }}
-            >
-                <span className="fs-5 me-1">←</span><u>Browse Other Restaurants</u>
-            </button>
+            <Link to="/customer/home" style={{ textDecoration: 'none' }}>
+                <button
+                    className="btn text-dark border-0 d-flex align-items-center mt-3 ms-5 fw-bold"
+                    style={{ backgroundColor: 'transparent' }}
+                >
+                    <span className="fs-5 me-1">←</span><u>Back to Home</u>
+                </button>
             </Link>
+            <div className="container mt-4">
                 <div className="d-flex align-items-center mb-3">
                 <img
                     src={restaurant.image_url 

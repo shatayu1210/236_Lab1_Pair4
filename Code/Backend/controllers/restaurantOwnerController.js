@@ -134,7 +134,7 @@ exports.updateRestaurantOwner = async (req, res) => {
         }
 
         // Basic validation
-        if (!first_name || !last_name || !email || !password || !phone || !date_of_birth || !address) {
+        if (!first_name || !last_name || !email || !phone || !date_of_birth || !address) {
             return res.status(400).json({ error: "Required fields are missing" });
         }
 

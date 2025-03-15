@@ -5,6 +5,7 @@ import axios from "axios";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import { createCustomer } from "../../redux/slices/customer/customerSlice";
 import NavbarDark from "../Common/NavbarDark";
+import { validateEmail, validatePhone } from "../../utils/validation";
 
 const CustomerSignup = () => {
     const [customer, setCustomer] = useState({
@@ -18,6 +19,11 @@ const CustomerSignup = () => {
         image_url: null,
     });
 
+    const [validationErrors, setValidationErrors] = useState({
+        email: "",
+        phone: ""
+    });
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     
@@ -29,6 +35,14 @@ const CustomerSignup = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setCustomer({ ...customer, [name]: value });
+        
+        // Clear validation errors when user types
+        if (name === 'email' || name === 'phone') {
+            setValidationErrors({
+                ...validationErrors,
+                [name]: ""
+            });
+        }
     };
 
     // Handle File Upload
@@ -52,6 +66,25 @@ const CustomerSignup = () => {
     // Handle Form Submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate email and phone before submission
+        let isValid = true;
+        const newValidationErrors = { email: "", phone: "" };
+        
+        if (!validateEmail(customer.email)) {
+            newValidationErrors.email = "Please enter a valid email address";
+            isValid = false;
+        }
+        
+        if (!validatePhone(customer.phone)) {
+            newValidationErrors.phone = "Please enter a valid 10-digit phone number";
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            setValidationErrors(newValidationErrors);
+            return;
+        }
         
         console.log("Submitting customer data:", customer); 
     
@@ -91,11 +124,22 @@ const CustomerSignup = () => {
                         </div>
                         <div className="mb-3">
                             <label htmlFor="phone">Phone <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="phone" value={customer.phone} onChange={handleChange} required />
+                            <input 
+                                type="tel" 
+                                className="form-control" 
+                                name="phone" 
+                                value={customer.phone} 
+                                onChange={handleChange} 
+                                pattern="[0-9]*" 
+                                inputMode="numeric"
+                                required 
+                            />
+                            {validationErrors.phone && <div className="text-danger">{validationErrors.phone}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="email">Email <span className="text-danger">*</span></label>
                             <input type="email" className="form-control" name="email" value={customer.email} onChange={handleChange} autoComplete="username" required />
+                            {validationErrors.email && <div className="text-danger">{validationErrors.email}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="password">Password <span className="text-danger">*</span></label>

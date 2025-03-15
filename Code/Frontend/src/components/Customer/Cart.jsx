@@ -17,10 +17,16 @@ const Cart = () => {
     const cartItems = useSelector(state => state.cart.items);
     const cartTotal = useSelector(selectCartTotal);
     const restaurantId = useSelector(state => state.cart.restaurantId);
-    const { isCustomerAuthenticated, customer } = useSelector(state => state.auth);
-    const { orderStatus, orderError } = useSelector(state => state.cart);
+    const { isCustomerAuthenticated, customer, loading } = useSelector(state => state.auth);
+    const { orderStatus, orderError } = useSelector(state => state.order);
     const [error, setError] = useState(null);
     const [orderType, setOrderType] = useState("delivery");
+
+    useEffect(() => {
+        if (!loading && !isCustomerAuthenticated) {
+            navigate("/customer/login", { state: { signedOut: true } });
+        }
+    }, [isCustomerAuthenticated, navigate, loading]);
 
     useEffect(() => {
         dispatch(resetOrderStatus()); // Reset order status when entering cart
@@ -30,10 +36,12 @@ const Cart = () => {
     useEffect(() => {
         if (orderStatus === 'succeeded') {
             setTimeout(() => {
+                dispatch(clearCart()); // Clear the cart
+                dispatch(resetOrderStatus());
                 navigate('/customer/home');
             }, 2000);
         }
-    }, [orderStatus, navigate]);
+    }, [orderStatus, navigate, dispatch]);
 
     const handleQuantityChange = (itemId, newQuantity) => {
         if (newQuantity < 1) {

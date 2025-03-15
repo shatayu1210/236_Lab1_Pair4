@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, logoutRestaurantOwner } from "../../redux/slices/auth/authSlice";
 import "./Navbar.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import { selectCartItemsCount } from '../../redux/slices/customer/cartSlice';
 import axios from "axios";
 axios.defaults.withCredentials = true;
@@ -13,7 +14,8 @@ const ImageDisplay = () => {
   const ownerId = useSelector((state) => state.auth.restaurantOwner?.id);
   const isOwnerAuthenticated = useSelector((state) => state.auth.isOwnerAuthenticated);
   const isCustomerAuthenticated = useSelector((state) => state.auth.isCustomerAuthenticated);
-
+  const navigate = useNavigate();
+  
   useEffect(() => {
     // For customer profile picture
     if (isCustomerAuthenticated && customerId) {
@@ -74,6 +76,7 @@ const NavSidebar = () => {
   // Get authentication state and cart items count from Redux
   const { isCustomerAuthenticated, isOwnerAuthenticated, customer } = useSelector((state) => state.auth);
   const cartItemCount = useSelector(selectCartItemsCount); // Assuming cart item count is in Redux state
+  const ownerId = useSelector((state) => state.auth.restaurantOwner?.id);
 
   // Close sidebar when clicking anywhere outside
   useEffect(() => {
@@ -93,9 +96,13 @@ const NavSidebar = () => {
   // Handle Logout
   const handleLogout = () => {
     if (isCustomerAuthenticated) {
-      dispatch(logoutUser());
+      dispatch(logoutUser()).then(() => {
+        navigate('/customer/login');
+      });
     } else if (isOwnerAuthenticated) {
-      dispatch(logoutRestaurantOwner());
+      dispatch(logoutRestaurantOwner()).then(() => {
+        navigate('/owner/login');
+      });
     }
   };
 
@@ -163,38 +170,57 @@ const NavSidebar = () => {
 
         {isCustomerAuthenticated || isOwnerAuthenticated ? (
           <>
-          <button className="btn btn-light mt-2 w-100"  style={{ backgroundColor: "#e4e4e4" }} onClick={handleLogout}>
-            Logout
-          </button>
-          {isCustomerAuthenticated && customer && (
-            <>
-              <Link to={`/profile/edit/${customer.id}`}>
+            {/* Edit Profile Button */}
+            {isCustomerAuthenticated && customer && (
+              <Link to={`/customer/profile/${customer.id}`}>
                 <button className="btn btn-outline-dark mt-2 w-100">
                   Edit Profile
                 </button>
               </Link>
-              {/* Orders link for customer */}
-              <Link to="/customer/orders">
-                <button className="btn btn-outline-dark mt-2 w-100">
-                  Orders
-                </button>
-              </Link>
-            </>
-          )}
-          {isOwnerAuthenticated && (
-            <>
-              <Link to="/owner/home">
-                <button className="btn btn-outline-dark mt-2 w-100">
-                  My Restaurants
-                </button>
-              </Link>
-              <Link to="/owner/profile">
+            )}
+            {isOwnerAuthenticated && (
+              <Link to={`/owner/profile/${ownerId}`}>
                 <button className="btn btn-outline-dark mt-2 w-100">
                   Edit Profile
                 </button>
               </Link>
-            </>
-          )}
+            )}
+
+            <button className="btn btn-light mt-2 w-100"  style={{ backgroundColor: "#e4e4e4" }} onClick={handleLogout}>
+              Logout
+            </button>
+            {isCustomerAuthenticated && customer && (
+              <>
+                {/* Orders link for customer */}
+                <Link to="/customer/orders">
+                <button 
+                  className="fw-bold mt-4 ms-0 px-2 py-0 text-start text-dark mb-0 w-100 border-0" 
+                  style={{ backgroundColor: "transparent", cursor: "pointer" }}
+                >
+                  Orders  <i className="bi bi-bag"></i>
+                </button>
+                </Link>
+                {/* Orders link for customer */}
+                <Link to="/customer/favorites">
+                <button 
+                  className="fw-bold mt-1 ms-0 px-2 py-0 text-start text-dark w-100 border-0" 
+                  style={{ backgroundColor: "transparent", cursor: "pointer" }}
+                >
+                  Favorites  <i className="bi bi-heart text-black"></i>
+                </button>
+                </Link>
+              </>
+            )}
+            {isOwnerAuthenticated && (
+              <>
+                <Link to="/owner/home">
+                  <button className="fw-bold mt-3 ms-0 px-2 py-0 text-start text-dark w-100 border-0" 
+                  style={{ backgroundColor: "transparent", cursor: "pointer" }}>
+                    My Restaurants  <i className="bi bi-building text-black"></i>
+                  </button>
+                </Link>
+              </>
+            )}
           </>
         ) : (
           <>

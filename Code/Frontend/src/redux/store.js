@@ -6,6 +6,7 @@ import restaurantReducer from "./slices/customer/restaurantSlice";
 import ownerRestaurantReducer from "./slices/owner/ownerRestaurantSlice";
 import orderReducer from "./slices/customer/orderSlice";
 import cartReducer from "./slices/customer/cartSlice";
+import favoriteReducer from "./slices/customer/favoriteSlice";
 
 
 const store = configureStore({
@@ -16,7 +17,8 @@ const store = configureStore({
         order: orderReducer,
         restaurantOwner: restaurantOwnerReducer, 
         restaurants: restaurantReducer,
-        ownerRestaurants: ownerRestaurantReducer
+        ownerRestaurants: ownerRestaurantReducer,
+        favorites: favoriteReducer
     },
 });
 

@@ -62,7 +62,7 @@ exports.viewDishesByRestaurant = async (req, res) => {
         if (dishes.length > 0) {
             res.status(200).json(dishes);
         } else {
-            res.status(404).json({ error: `No dishes found for Restaurant ID: ${req.params.restaurant_id}` });
+            res.status(404).json({ error: `No dishes found for Restaurant ID: ${req.params.id}` });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
