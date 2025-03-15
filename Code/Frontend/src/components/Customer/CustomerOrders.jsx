@@ -5,15 +5,20 @@ import { useNavigate } from "react-router-dom";
 import NavbarDark from '../Common/NavbarDark';
 import "bootstrap/dist/css/bootstrap.min.css"; // Ensure Bootstrap is imported
 import "bootstrap-icons/font/bootstrap-icons.css"; // Import Bootstrap Icons
+import axios from 'axios'; // Import axios for the cancel request
 
 const getStatusBadgeClass = (status) => {
     switch (status.toLowerCase()) {
         case 'pending':
             return 'bg-warning';
-        case 'processing':
+        case 'preparing':
             return 'bg-info';
         case 'out for delivery':
             return 'bg-primary';
+        case 'ready for pickup':
+            return 'bg-info';
+        case 'picked up':
+            return 'bg-success';
         case 'cancelled':
             return 'bg-danger';
         case 'delivered':
@@ -40,6 +45,7 @@ const CustomerOrders = () => {
     const [orders, setOrders] = useState([]);
     const [expandedOrderId, setExpandedOrderId] = useState(null);
     const [orderDetails, setOrderDetails] = useState(null);
+    const [cancelling, setCancelling] = useState(false);
 
     useEffect(() => {
         if (customerId) {
@@ -65,6 +71,42 @@ const CustomerOrders = () => {
         } else {
             setOrderDetails(null);
         }
+    };
+
+    const handleCancelOrder = async (orderId) => {
+        if (!window.confirm("Are you sure you want to cancel this order?")) {
+            return;
+        }
+        
+        setCancelling(true);
+        try {
+            await axios.put(`http://localhost:3000/api/orders/${orderId}`, {
+                status: 'Cancelled'
+            });
+            
+            // Update the local state to reflect the cancellation
+            const updatedOrders = orders.map(order => 
+                order.id === orderId ? { ...order, status: 'Cancelled' } : order
+            );
+            setOrders(updatedOrders);
+            
+            if (orderDetails && orderDetails.id === orderId) {
+                setOrderDetails({ ...orderDetails, status: 'Cancelled' });
+            }
+            
+            alert('Order cancelled successfully');
+        } catch (error) {
+            console.error('Error cancelling order:', error);
+            alert('Failed to cancel order');
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    // Helper function to check if order can be cancelled
+    const canCancelOrder = (status) => {
+        const nonCancellableStatuses = ['preparing', 'out for delivery', 'ready for pickup', 'picked up', 'delivered', 'cancelled'];
+        return !nonCancellableStatuses.includes(status.toLowerCase());
     };
 
     return (
@@ -150,6 +192,15 @@ const CustomerOrders = () => {
                                                     ) : (
                                                         <p>No items found for this order.</p>
                                                     )}
+                                                </div>
+                                                <div className="mt-4 d-flex justify-content-end">
+                                                    <button
+                                                        className="btn btn-danger"
+                                                        disabled={!canCancelOrder(orderDetails.status) || cancelling}
+                                                        onClick={() => handleCancelOrder(orderDetails.id)}
+                                                    >
+                                                        {cancelling ? 'Cancelling...' : 'Cancel Order'}
+                                                    </button>
                                                 </div>
                                             </div>
                                         )}

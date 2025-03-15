@@ -221,10 +221,10 @@ exports.updateOrder = async (req, res) => {
         // Validate status if provided
         let lower_status = status?.toLowerCase();
         if (status) {
-            const validStatuses = ['pending', 'processing', 'out for delivery', 'delivered', 'cancelled'];
+            const validStatuses = ['pending', 'preparing', 'out for delivery', 'ready for pickup', 'picked up', 'delivered', 'cancelled'];
             if (!validStatuses.includes(lower_status)) {
                 return res.status(400).json({
-                    error: 'Status must be one of: pending, processing, out for delivery, cancelled, delivered',
+                    error: 'Status must be one of: pending, preparing, out for delivery, ready for pickup, picked up, cancelled, delivered',
                 });
             }
         }

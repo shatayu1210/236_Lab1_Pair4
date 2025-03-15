@@ -20,8 +20,18 @@ const RestaurantOrders = () => {
     const [selectedStatus, setSelectedStatus] = useState(''); // State to track selected status
     const [filterStatus, setFilterStatus] = useState(''); // State to track filter status
 
+    // Get status options based on order type
+    const getOrderStatusOptions = (orderType) => {
+        if (orderType && orderType.toLowerCase() === 'pickup') {
+            return ['Pending', 'Preparing', 'Ready for Pickup', 'Picked Up', 'Cancelled'];
+        } else {
+            return ['Pending', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'];
+        }
+    };
+
+    // Default status options for filter dropdown
     const orderStatusOptions = [
-        'Pending', 'Processing', 'Out for Delivery', 'Cancelled', 'Delivered'
+        'Pending', 'Preparing', 'Out for Delivery', 'Ready for Pickup', 'Picked Up', 'Delivered', 'Cancelled'
     ];   
 
     const isOwnerAuthenticated = useSelector((state) => state.auth.isOwnerAuthenticated);    
@@ -80,10 +90,14 @@ const RestaurantOrders = () => {
         switch (status.toLowerCase()) {
             case 'pending':
                 return 'bg-warning';
-            case 'processing':
+            case 'preparing':
                 return 'bg-info';
             case 'out for delivery':
                 return 'bg-primary';
+            case 'ready for pickup':
+                return 'bg-info';
+            case 'picked up':
+                return 'bg-success';
             case 'cancelled':
                 return 'bg-danger';
             case 'delivered':
@@ -119,8 +133,9 @@ const RestaurantOrders = () => {
                                     className="form-select form-select-sm"
                                     value={selectedStatus} // Default to selectedStatus
                                     onChange={handleStatusChange}
+                                    disabled={orderDetails.status.toLowerCase() === 'cancelled'}
                                 >
-                                    {orderStatusOptions.map((status) => (
+                                    {getOrderStatusOptions(orderDetails.order_type).map((status) => (
                                         <option key={status} value={status}>
                                             {status}
                                         </option>

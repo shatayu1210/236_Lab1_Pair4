@@ -157,7 +157,10 @@ const UpdateRestaurantDishForm = ({ restaurant, onSuccess, onCancel }) => {
 
         try {
             const response = await axios.post('http://127.0.0.1:3000/api/dishes', dishToSubmit);
-            setDishes([...dishes, response.data]);
+            
+            // Fetch the updated list of dishes to ensure we have the complete data
+            await fetchDishes(restaurant.id);
+            
             setShowAddDishForm(false);
             // Reset form with empty strings, not null values
             setNewDish({

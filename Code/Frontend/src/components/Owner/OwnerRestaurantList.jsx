@@ -54,6 +54,9 @@ const OwnerRestaurantList = () => {
     const handleUpdateDishSuccess = () => {
         setShowDishUpdateForm(false);
         setSelectedRestaurant(null);
+        if (ownerId) {
+            dispatch(fetchOwnerRestaurants(ownerId));
+        }
     };
 
     const handleUpdateClick = (restaurant) => {
