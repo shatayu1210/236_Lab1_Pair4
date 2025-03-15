@@ -1,5 +1,5 @@
 
-# UberEATS Prototype
+# UberEats Prototype
 
 This repository contains a prototype of UberEATS built with React for the frontend and Node.js (Express.js) for the backend. The application supports two main user types: Customers and Restaurant Owners, with Redux implemented for state management.
 
